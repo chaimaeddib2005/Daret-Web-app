@@ -1,0 +1,42 @@
+{% extends 'daret/base.html' %}
+{% block title %}Profile — DARET{% endblock %}
+{% block content %}
+<div class="container-sm">
+  <div class="page-head">
+    <h1>Profile</h1>
+  </div>
+
+  <div class="card" style="text-align:center;padding:2rem;margin-bottom:1.25rem">
+    <div style="width:64px;height:64px;border-radius:50%;background:var(--green-dark);color:#fff;font-family:'Lora',serif;font-size:1.8rem;font-weight:600;display:flex;align-items:center;justify-content:center;margin:0 auto 0.75rem">
+      {{ user.username.0|upper }}
+    </div>
+    <div style="font-family:'Lora',serif;font-size:1.2rem;font-weight:600">{{ user.get_full_name|default:user.username }}</div>
+    <div class="text-muted text-sm">@{{ user.username }}</div>
+    {% if user.email %}<div class="text-muted text-sm">{{ user.email }}</div>{% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card-title">Edit Profile</div>
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-row">
+        <div class="form-group">
+          <label>First Name</label>
+          <input type="text" name="first_name" value="{{ user.first_name }}">
+        </div>
+        <div class="form-group">
+          <label>Last Name</label>
+          <input type="text" name="last_name" value="{{ user.last_name }}">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" name="email" value="{{ user.email }}">
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

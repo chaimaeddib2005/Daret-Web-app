@@ -1,0 +1,251 @@
+{% extends 'daret/base.html' %}
+{% block title %}{{ circle.name }} — DARET{% endblock %}
+{% block content %}
+<div class="container">
+
+  <div class="page-head">
+    <div>
+      <a href="{% url 'circle_list' %}" class="text-muted text-sm">← Circles</a>
+      <h1 style="margin-top:4px">{{ circle.name }}</h1>
+      <div class="flex-gap mt-1">
+        <span class="badge badge-{{ circle.status }}">{{ circle.status }}</span>
+        <span class="text-muted text-sm">{{ approved_members.count }} members · {{ circle.get_frequency_display }}</span>
+        {% if is_organizer %}<span class="badge badge-forming">Organizer</span>{% endif %}
+      </div>
+    </div>
+    <div class="flex-gap">
+      <div style="text-align:right">
+        <div class="text-muted text-sm">Pot per round</div>
+        <div style="font-family:'Lora',serif;font-size:1.5rem;font-weight:600;color:var(--green-dark)">{{ pot_amount|floatformat:0 }} MAD</div>
+      </div>
+      {% if circle.status == 'forming' and is_organizer %}
+      <form method="post" action="{% url 'circle_start' circle.id %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary" onclick="return confirm('Start this circle?')">▶ Start Circle</button>
+      </form>
+      {% endif %}
+      {% if circle.status == 'active' and is_organizer %}
+      <form method="post" action="{% url 'circle_next_round' circle.id %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-secondary" onclick="return confirm('Advance to the next round?')">⏭ Next Round</button>
+      </form>
+      {% endif %}
+      {% if circle.status == 'forming' and not my_membership %}
+      <form method="post" action="{% url 'circle_join' circle.id %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary">Join Circle</button>
+      </form>
+      {% endif %}
+      {% if my_membership and my_membership.status == 'pending' %}
+      <span class="badge badge-pending">Request Pending</span>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if circle.status == 'active' %}
+  <div class="round-banner">
+    <div class="rb-item">
+      <div class="rb-label">Current Round</div>
+      <div class="rb-val">{{ circle.current_round }} / {{ total_rounds }}</div>
+    </div>
+    {% if current_payout %}
+    <div class="rb-item">
+      <div class="rb-label">This Round's Recipient</div>
+      <div class="rb-sub">@{{ current_payout.recipient.username }} — {{ current_payout.total_amount|floatformat:0 }} MAD {% if current_payout.is_paid %}✓{% endif %}</div>
+    </div>
+    {% endif %}
+    {% if next_recipient %}
+    <div class="rb-item">
+      <div class="rb-label">Next Up</div>
+      <div class="rb-sub">@{{ next_recipient.username }}</div>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="tabs">
+    <a href="?tab=overview"      class="tab-link {% if tab == 'overview' %}active{% endif %}">Overview</a>
+    <a href="?tab=members"       class="tab-link {% if tab == 'members'  %}active{% endif %}">Members</a>
+    <a href="?tab=contributions" class="tab-link {% if tab == 'contributions' %}active{% endif %}">Contributions</a>
+    <a href="?tab=schedule"      class="tab-link {% if tab == 'schedule' %}active{% endif %}">Schedule</a>
+    <a href="?tab=disputes"      class="tab-link {% if tab == 'disputes' %}active{% endif %}">Disputes</a>
+  </div>
+
+  {% if tab == 'overview' %}
+  <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:1.25rem">
+    <div class="card">
+      <div class="card-title">Circle Info</div>
+      <table style="font-size:0.875rem">
+        <tr><td class="text-muted" style="padding:6px 0;width:140px">Contribution</td><td style="padding:6px 0;font-weight:500">{{ circle.contribution_amount|floatformat:0 }} MAD / {{ circle.get_frequency_display }}</td></tr>
+        <tr><td class="text-muted" style="padding:6px 0">Max Members</td><td style="padding:6px 0;font-weight:500">{{ circle.max_members }}</td></tr>
+        <tr><td class="text-muted" style="padding:6px 0">Payout Order</td><td style="padding:6px 0;font-weight:500">{{ circle.payout_order_method }}</td></tr>
+        <tr><td class="text-muted" style="padding:6px 0">Organizer</td><td style="padding:6px 0;font-weight:500">@{{ circle.organizer.username }}</td></tr>
+        {% if circle.description %}
+        <tr><td class="text-muted" style="padding:6px 0;vertical-align:top">Description</td><td style="padding:6px 0">{{ circle.description }}</td></tr>
+        {% endif %}
+        {% if circle.rules %}
+        <tr><td class="text-muted" style="padding:6px 0;vertical-align:top">Rules</td><td style="padding:6px 0">{{ circle.rules }}</td></tr>
+        {% endif %}
+      </table>
+    </div>
+    {% if circle.status == 'forming' and is_organizer %}
+    <div class="card">
+      <div class="card-title">Invite Members</div>
+      <p class="text-sm text-muted mb-1">Share this token with people you want to invite:</p>
+      <div class="invite-box" style="margin:0">
+        <span class="invite-token">{{ circle.invite_token }}</span>
+        <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText('{{ circle.invite_token }}');this.textContent='Copied!'">Copy</button>
+      </div>
+      <p class="text-sm text-muted mt-1">They can join from the Circles page using this token.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  {% elif tab == 'members' %}
+  {% if pending_members and is_organizer %}
+  <div class="card mb-2">
+    <div class="card-title">Pending Requests ({{ pending_members.count }})</div>
+    {% for m in pending_members %}
+    <div class="member-row">
+      <div class="member-avatar">{{ m.user.username.0|upper }}</div>
+      <div>
+        <div class="member-name">{{ m.user.first_name }} {{ m.user.last_name }}</div>
+        <div class="member-username">@{{ m.user.username }}</div>
+      </div>
+      <div class="member-actions">
+        <form method="post" action="{% url 'approve_member' circle.id m.user.id %}">{% csrf_token %}<button type="submit" class="btn btn-sm btn-primary">Approve</button></form>
+        <form method="post" action="{% url 'reject_member' circle.id m.user.id %}">{% csrf_token %}<button type="submit" class="btn btn-sm btn-danger">Reject</button></form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <div class="card-title">Members ({{ approved_members.count }})</div>
+    {% for m in approved_members %}
+    <div class="member-row">
+      <div class="member-avatar">{{ m.user.username.0|upper }}</div>
+      <div style="flex:1">
+        <div class="member-name">{{ m.user.first_name|default:m.user.username }} {{ m.user.last_name }}</div>
+        <div class="member-username">@{{ m.user.username }}</div>
+      </div>
+      <div class="flex-gap">
+        {% if m.payout_order %}<div style="background:var(--green-light);color:var(--green-dark);border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:0.8rem">#{{ m.payout_order }}</div>{% endif %}
+        <div class="text-sm" style="color:var(--gold)">★ {{ m.trust_score }}</div>
+        {% if m.has_received_payout %}<span class="badge badge-paid">Paid</span>{% endif %}
+      </div>
+      {% if is_organizer and circle.status == 'forming' and circle.payout_order_method == 'manual' %}
+      <form method="post" action="{% url 'set_payout_order' circle.id m.user.id %}" style="display:flex;gap:6px;align-items:center">
+        {% csrf_token %}
+        <input type="number" name="order" placeholder="#" min="1" style="width:55px;padding:4px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:0.8rem">
+        <button type="submit" class="btn btn-ghost btn-sm">Set</button>
+      </form>
+      {% endif %}
+    </div>
+    {% empty %}
+    <div class="empty"><p>No approved members yet.</p></div>
+    {% endfor %}
+  </div>
+
+  {% elif tab == 'contributions' %}
+  <div class="card">
+    <div class="card-title">Contributions</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Member</th><th>Round</th><th>Amount</th><th>Status</th><th>Paid Date</th>{% if is_organizer %}<th>Actions</th>{% endif %}</tr></thead>
+        <tbody>
+          {% for c in contributions %}
+          <tr>
+            <td>@{{ c.membership.user.username }}</td>
+            <td>Round {{ c.round_number }}</td>
+            <td>{{ c.amount|floatformat:0 }} MAD</td>
+            <td><span class="badge badge-{{ c.status }}">{{ c.status }}</span></td>
+            <td>{{ c.paid_date|date:"d M Y"|default:"—" }}</td>
+            {% if is_organizer %}
+            <td>
+              {% if c.status == 'pending' %}
+              <div class="flex-gap">
+                <form method="post" action="{% url 'mark_contribution_paid' circle.id c.id %}">{% csrf_token %}<button class="btn btn-sm btn-primary">Paid</button></form>
+                <form method="post" action="{% url 'mark_contribution_late' circle.id c.id %}">{% csrf_token %}<button class="btn btn-sm btn-danger">Late</button></form>
+              </div>
+              {% endif %}
+            </td>
+            {% endif %}
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" class="text-muted" style="text-align:center;padding:1.5rem">No contributions yet. Start the circle first.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% elif tab == 'schedule' %}
+  <div class="card">
+    <div class="card-title">Payout Schedule</div>
+    {% if schedule %}
+      {% for p in schedule %}
+      <div class="schedule-item {% if p.round_number == circle.current_round %}current{% elif p.is_paid %}done{% endif %}">
+        <div class="schedule-round">Round {{ p.round_number }}</div>
+        <div class="schedule-name">@{{ p.recipient.username }}</div>
+        <div class="schedule-amt">{{ p.total_amount|floatformat:0 }} MAD</div>
+        {% if p.is_paid %}
+          <span class="badge badge-paid">✓ Paid</span>
+        {% elif p.round_number == circle.current_round %}
+          <span class="badge badge-active">Current</span>
+        {% else %}
+          <span class="badge badge-pending">Upcoming</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty"><p>Schedule will appear once the circle starts.</p></div>
+    {% endif %}
+  </div>
+
+  {% elif tab == 'disputes' %}
+  <div class="card mb-2">
+    <div class="card-title">Raise a Dispute</div>
+    <form method="post" action="{% url 'raise_dispute' circle.id %}">
+      {% csrf_token %}
+      <div class="form-group">
+        <label>Describe the issue</label>
+        <textarea name="description" placeholder="What happened? Be specific." required></textarea>
+      </div>
+      <button type="submit" class="btn btn-secondary">Submit Dispute</button>
+    </form>
+  </div>
+
+  {% if disputes %}
+  {% for d in disputes %}
+  <div class="dispute-card {{ d.status }}">
+    <div class="flex-between mb-1">
+      <div class="flex-gap">
+        <strong class="text-sm">@{{ d.raised_by.username }}</strong>
+        <span class="badge badge-{{ d.status }}">{{ d.status }}</span>
+      </div>
+      <span class="text-muted text-sm">{{ d.created_at|date:"d M Y" }}</span>
+    </div>
+    <p style="font-size:0.875rem">{{ d.description }}</p>
+    {% if d.resolution %}
+    <div class="mt-1" style="background:var(--green-light);padding:8px 10px;border-radius:var(--radius);font-size:0.82rem;color:var(--green-dark)">
+      <strong>Resolution:</strong> {{ d.resolution }}
+    </div>
+    {% endif %}
+    {% if is_organizer and d.status == 'open' %}
+    <form method="post" action="{% url 'resolve_dispute' circle.id d.id %}" class="flex-gap mt-2">
+      {% csrf_token %}
+      <input type="text" name="resolution" placeholder="Resolution note…" style="flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:0.85rem;outline:none">
+      <button type="submit" class="btn btn-sm btn-primary">Resolve</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endfor %}
+  {% else %}
+  <div class="empty"><p>No disputes raised.</p></div>
+  {% endif %}
+  {% endif %}
+
+</div>
+{% endblock %}

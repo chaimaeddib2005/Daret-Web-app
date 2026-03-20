@@ -1,0 +1,54 @@
+{% extends 'daret/base.html' %}
+{% block title %}Circles — DARET{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="page-head">
+    <div>
+      <h1>Circles</h1>
+      <p>All your saving circles in one place.</p>
+    </div>
+    <a href="{% url 'circle_create' %}" class="btn btn-primary">+ Create Circle</a>
+  </div>
+
+  <div class="invite-box">
+    <span style="font-size:0.85rem;font-weight:500;color:var(--muted);white-space:nowrap">Have an invite token?</span>
+    <form method="post" action="{% url 'join_by_invite' %}" style="display:flex;gap:8px;flex:1;flex-wrap:wrap">
+      {% csrf_token %}
+      <input type="text" name="token" placeholder="Paste token here…" style="flex:1;min-width:180px;padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:0.875rem;outline:none">
+      <button type="submit" class="btn btn-secondary btn-sm">Join</button>
+    </form>
+  </div>
+
+  {% if circles %}
+  <div class="circles-grid">
+    {% for circle in circles %}
+    <a href="{% url 'circle_detail' circle.id %}" class="circle-card">
+      <div class="flex-between">
+        <span style="font-size:1.4rem;color:var(--green)">◉</span>
+        <span class="badge badge-{{ circle.status }}">{{ circle.status }}</span>
+      </div>
+      <div class="circle-card-name">{{ circle.name }}</div>
+      <div class="circle-card-meta">{{ circle.description|default:"No description."|truncatechars:60 }}</div>
+      <div class="circle-card-bottom">
+        <div>
+          <div class="circle-card-amount">{{ circle.contribution_amount|floatformat:0 }} MAD / {{ circle.get_frequency_display }}</div>
+          <div class="text-muted text-sm">{{ circle.approved_member_count }} members · Round {{ circle.current_round }}/{{ circle.get_total_rounds }}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="text-muted text-sm">Pot</div>
+          <div style="font-weight:600;color:var(--green-dark)">{{ circle.get_pot_amount|floatformat:0 }} MAD</div>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty">
+    <div class="empty-icon">◎</div>
+    <h3>No circles yet</h3>
+    <p>Create a circle or use an invite token to join one.</p>
+    <a href="{% url 'circle_create' %}" class="btn btn-primary mt-2">Create First Circle</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

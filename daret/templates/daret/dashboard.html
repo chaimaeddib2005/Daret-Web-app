@@ -1,0 +1,99 @@
+{% extends 'daret/base.html' %}
+{% block title %}Dashboard — DARET{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="page-head">
+    <div>
+      <h1>Hello, {{ user.first_name|default:user.username }}</h1>
+      <p>Here's what's going on in your circles.</p>
+    </div>
+    <a href="{% url 'circle_create' %}" class="btn btn-primary">+ New Circle</a>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-box green">
+      <div class="val">{{ circles.count }}</div>
+      <div class="lbl">My Circles</div>
+    </div>
+    <div class="stat-box gold">
+      <div class="val">{{ active_count }}</div>
+      <div class="lbl">Active</div>
+    </div>
+    <div class="stat-box red">
+      <div class="val">{{ pending_count }}</div>
+      <div class="lbl">Pending Contributions</div>
+    </div>
+    <div class="stat-box plain">
+      <div class="val">{{ total_received|floatformat:0 }} MAD</div>
+      <div class="lbl">Total Received</div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:1.25rem">
+    <div class="card">
+      <div class="flex-between mb-2">
+        <div class="card-title" style="border:none;padding:0;margin:0">My Circles</div>
+        <a href="{% url 'circle_list' %}" class="text-sm" style="color:var(--green)">View all →</a>
+      </div>
+      {% if circles %}
+        {% for circle in circles|slice:":5" %}
+        <a href="{% url 'circle_detail' circle.id %}" style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);text-decoration:none;color:var(--text)">
+          <div style="width:8px;height:8px;border-radius:50%;background:{% if circle.status == 'active' %}var(--green){% elif circle.status == 'forming' %}var(--gold){% else %}#ccc{% endif %};flex-shrink:0"></div>
+          <div style="flex:1">
+            <div style="font-weight:500;font-size:0.875rem">{{ circle.name }}</div>
+            <div class="text-muted text-sm">Round {{ circle.current_round }}/{{ circle.get_total_rounds }} · {{ circle.approved_member_count }} members</div>
+          </div>
+          <span class="badge badge-{{ circle.status }}">{{ circle.status }}</span>
+          <div style="font-weight:600;font-size:0.875rem;color:var(--green-dark)">{{ circle.contribution_amount|floatformat:0 }} MAD</div>
+        </a>
+        {% endfor %}
+      {% else %}
+        <div class="empty">
+          <div class="empty-icon">◎</div>
+          <p>No circles yet. <a href="{% url 'circle_create' %}">Create one</a>.</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <div class="flex-between mb-2">
+        <div class="card-title" style="border:none;padding:0;margin:0">Recent Contributions</div>
+        <a href="{% url 'my_finances' %}" class="text-sm" style="color:var(--green)">View all →</a>
+      </div>
+      {% if recent_contributions %}
+        {% for c in recent_contributions %}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+          <div>
+            <div style="font-size:0.875rem;font-weight:500">Round {{ c.round_number }}</div>
+            <div class="text-muted text-sm">{{ c.membership.circle.name }}</div>
+          </div>
+          <div style="text-align:right">
+            <span class="badge badge-{{ c.status }}">{{ c.status }}</span>
+            <div style="font-size:0.875rem;font-weight:600;color:var(--green-dark);margin-top:2px">{{ c.amount|floatformat:0 }} MAD</div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty"><p>No contributions yet.</p></div>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if upcoming_payouts %}
+  <div class="card mt-3">
+    <div class="card-title">My Upcoming Payouts</div>
+    <div class="payout-grid">
+      {% for p in upcoming_payouts %}
+      <div class="payout-card {% if p.is_paid %}received{% endif %}">
+        <div class="round">Round {{ p.round_number }} — {{ p.circle.name }}</div>
+        <div class="amount">{{ p.total_amount|floatformat:0 }} MAD</div>
+        <span class="badge {% if p.is_paid %}badge-paid{% else %}badge-pending{% endif %}">
+          {% if p.is_paid %}Received{% else %}Upcoming{% endif %}
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

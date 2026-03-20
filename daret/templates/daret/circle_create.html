@@ -1,0 +1,92 @@
+{% extends 'daret/base.html' %}
+{% block title %}New Circle — DARET{% endblock %}
+{% block content %}
+<div class="container-sm">
+  <div class="page-head">
+    <div>
+      <h1>Create a Circle</h1>
+      <p>Set up your rotating savings group.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <form method="post" id="circle-form">
+      {% csrf_token %}
+      <p class="card-title">Basic Info</p>
+      <div class="form-group">
+        <label>Circle Name</label>
+        <input type="text" name="name" value="{{ form.name.value|default:'' }}" required placeholder="e.g. Family Savings Circle">
+        {% if form.name.errors %}<p class="field-error">{{ form.name.errors.0 }}</p>{% endif %}
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea name="description" placeholder="What is this circle for?">{{ form.description.value|default:'' }}</textarea>
+      </div>
+      <div class="form-group">
+        <label>Rules</label>
+        <textarea name="rules" placeholder="Any rules members should know…">{{ form.rules.value|default:'' }}</textarea>
+      </div>
+
+      <p class="card-title mt-3">Financial Settings</p>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Contribution Amount (MAD)</label>
+          <input type="number" name="contribution_amount" id="contrib" value="{{ form.contribution_amount.value|default:'' }}" required placeholder="1000" min="1">
+          {% if form.contribution_amount.errors %}<p class="field-error">{{ form.contribution_amount.errors.0 }}</p>{% endif %}
+        </div>
+        <div class="form-group">
+          <label>Max Members</label>
+          <input type="number" name="max_members" id="max_mem" value="{{ form.max_members.value|default:'' }}" required placeholder="10" min="2" max="50">
+          {% if form.max_members.errors %}<p class="field-error">{{ form.max_members.errors.0 }}</p>{% endif %}
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Frequency</label>
+          <select name="frequency">
+            <option value="monthly" {% if form.frequency.value == 'monthly' %}selected{% endif %}>Monthly</option>
+            <option value="weekly"  {% if form.frequency.value == 'weekly'  %}selected{% endif %}>Weekly</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Payout Order</label>
+          <select name="payout_order_method">
+            <option value="manual"   {% if form.payout_order_method.value == 'manual'   %}selected{% endif %}>Manual (you decide)</option>
+            <option value="lottery"  {% if form.payout_order_method.value == 'lottery'  %}selected{% endif %}>Lottery (random)</option>
+            <option value="seniority"{% if form.payout_order_method.value == 'seniority'%}selected{% endif %}>Seniority (by join date)</option>
+          </select>
+        </div>
+      </div>
+      <div class="pot-preview" id="pot-preview" style="display:none">
+        <span>Pot per round:</span>
+        <strong id="pot-val">—</strong>
+      </div>
+
+      <div class="form-actions">
+        <a href="{% url 'circle_list' %}" class="btn btn-ghost">Cancel</a>
+        <button type="submit" class="btn btn-primary">Create Circle</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const contrib = document.getElementById('contrib');
+  const maxMem  = document.getElementById('max_mem');
+  const preview = document.getElementById('pot-preview');
+  const potVal  = document.getElementById('pot-val');
+  function updatePot() {
+    const c = parseFloat(contrib.value), m = parseInt(maxMem.value);
+    if (c > 0 && m > 0) {
+      potVal.textContent = (c * m).toLocaleString() + ' MAD';
+      preview.style.display = 'flex';
+    } else {
+      preview.style.display = 'none';
+    }
+  }
+  contrib.addEventListener('input', updatePot);
+  maxMem.addEventListener('input', updatePot);
+</script>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}DARET{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+{% if user.is_authenticated %}
+<nav>
+  <a href="{% url 'dashboard' %}" class="nav-logo"><span>◎</span> DARET</a>
+  <div class="nav-links">
+    <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Dashboard</a>
+    <a href="{% url 'circle_list' %}" class="{% if 'circle' in request.resolver_match.url_name %}active{% endif %}">Circles</a>
+    <a href="{% url 'my_finances' %}" class="{% if request.resolver_match.url_name == 'my_finances' %}active{% endif %}">My Finances</a>
+    <a href="{% url 'profile' %}" class="{% if request.resolver_match.url_name == 'profile' %}active{% endif %}">{{ user.username }}</a>
+    <form method="post" action="{% url 'logout' %}" style="display:inline">
+      {% csrf_token %}
+      <button type="submit" class="btn-logout">Logout</button>
+    </form>
+  </div>
+</nav>
+{% endif %}
+
+{% if messages %}
+<div style="max-width:980px;margin:1rem auto;padding:0 1.25rem">
+  {% for msg in messages %}
+  <div class="alert alert-{{ msg.tags }}">{{ msg }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% block content %}{% endblock %}
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,78 @@
+{% extends 'daret/base.html' %}
+{% block title %}My Finances — DARET{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="page-head">
+    <div>
+      <h1>My Finances</h1>
+      <p>Your contributions and payouts history.</p>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-box green">
+      <div class="val">{{ total_contributed|floatformat:0 }} MAD</div>
+      <div class="lbl">Total Contributed</div>
+    </div>
+    <div class="stat-box gold">
+      <div class="val">{{ total_received|floatformat:0 }} MAD</div>
+      <div class="lbl">Total Received</div>
+    </div>
+    <div class="stat-box plain">
+      <div class="val">{{ net_balance|floatformat:0 }} MAD</div>
+      <div class="lbl">Net Balance</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <a href="?tab=contributions" class="tab-link {% if tab == 'contributions' %}active{% endif %}">Contributions</a>
+    <a href="?tab=payouts"       class="tab-link {% if tab == 'payouts'       %}active{% endif %}">Payouts</a>
+  </div>
+
+  {% if tab == 'contributions' %}
+  <div class="card">
+    <div class="card-title">All Contributions</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Circle</th><th>Round</th><th>Amount</th><th>Status</th><th>Paid Date</th></tr></thead>
+        <tbody>
+          {% for c in contributions %}
+          <tr>
+            <td><a href="{% url 'circle_detail' c.membership.circle.id %}">{{ c.membership.circle.name }}</a></td>
+            <td>Round {{ c.round_number }}</td>
+            <td>{{ c.amount|floatformat:0 }} MAD</td>
+            <td><span class="badge badge-{{ c.status }}">{{ c.status }}</span></td>
+            <td>{{ c.paid_date|date:"d M Y"|default:"—" }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5" class="text-muted" style="text-align:center;padding:1.5rem">No contributions yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% else %}
+  <div class="card">
+    <div class="card-title">All Payouts</div>
+    {% if payouts %}
+    <div class="payout-grid">
+      {% for p in payouts %}
+      <div class="payout-card {% if p.is_paid %}received{% endif %}">
+        <div class="round">Round {{ p.round_number }}</div>
+        <div class="text-sm text-muted">{{ p.circle.name }}</div>
+        <div class="amount">{{ p.total_amount|floatformat:0 }} MAD</div>
+        <span class="badge {% if p.is_paid %}badge-paid{% else %}badge-pending{% endif %}">
+          {% if p.is_paid %}✓ Received{% else %}Upcoming{% endif %}
+        </span>
+        {% if p.paid_at %}<div class="text-sm text-muted mt-1">{{ p.paid_at|date:"d M Y" }}</div>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty"><p>No payouts yet.</p></div>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
