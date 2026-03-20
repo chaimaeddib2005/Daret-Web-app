@@ -1,58 +1,68 @@
-# DARET – Rotating Savings Circle (Django REST API)
+# DARET — Rotating Savings Circle
 
-## Setup & Run
+A web application that digitalizes the traditional Moroccan *daret*. Members contribute a fixed amount each round, and one member receives the full pot. The app handles everything — member management, contribution tracking, payout scheduling, and dispute resolution.
+
+---
+
+## Getting Started
 
 ```bash
-pip install -r requirements.txt
+pip install django
 python manage.py migrate
 python manage.py createsuperuser
 python manage.py runserver
 ```
 
-## API Endpoints
+Open your browser at `http://127.0.0.1:8000`
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | /api/auth/register/ | Register new user |
-| POST | /api/auth/login/ | Login (get JWT tokens) |
-| POST | /api/auth/refresh/ | Refresh access token |
-| GET | /api/auth/me/ | My profile |
-| GET/POST | /api/circles/ | List / create circles |
-| GET/PUT/DELETE | /api/circles/{id}/ | Circle detail |
-| POST | /api/circles/{id}/join/ | Request to join |
-| POST | /api/invite/{token}/ | Join via invite link |
-| POST | /api/circles/{id}/approve/{user_id}/ | Approve member |
-| POST | /api/circles/{id}/reject/{user_id}/ | Reject member |
-| POST | /api/circles/{id}/start/ | Start the circle |
-| POST | /api/circles/{id}/next_round/ | Advance to next round |
-| GET | /api/circles/{id}/dashboard/ | Circle dashboard |
-| GET | /api/circles/{id}/schedule/ | Payout schedule |
-| GET | /api/circles/{id}/history/ | Full contribution history |
-| POST | /api/circles/{id}/set-payout-order/{user_id}/{order}/ | Set manual payout order |
-| GET/POST | /api/circles/{circle_id}/contributions/ | List / create contributions |
-| POST | /api/circles/{circle_id}/contributions/{id}/mark_paid/ | Mark contribution paid |
-| POST | /api/circles/{circle_id}/contributions/{id}/mark_late/ | Mark contribution late |
-| GET/POST | /api/circles/{circle_id}/disputes/ | List / raise disputes |
-| POST | /api/circles/{circle_id}/disputes/{id}/resolve/ | Resolve dispute |
-| GET | /api/my/circles/ | My circles |
-| GET | /api/my/contributions/ | My contributions |
-| GET | /api/my/payouts/ | My payouts |
-| GET/POST | /api/ratings/ | Trust ratings |
-| Admin | /admin/ | Django admin panel |
+---
 
-## Circle Lifecycle
+## Pages
 
-1. **Forming** – Organizer creates circle, members join and get approved
-2. **Active** – Organizer starts the circle; contributions and payouts are generated per round
-3. **Next Round** – Organizer advances rounds after each payout
-4. **Completed** – All members have received their payout
+| URL | Description |
+|-----|-------------|
+| `/` | Dashboard — your circles and recent activity |
+| `/circles/` | All your circles |
+| `/circles/new/` | Create a new circle |
+| `/circles/<id>/` | Circle detail — members, contributions, schedule, disputes |
+| `/finances/` | Your contributions and payouts history |
+| `/profile/` | Edit your profile |
+| `/admin/` | Admin panel (superuser only) |
+
+---
+
+## How a Circle Works
+
+**1. Forming**
+The organizer creates the circle and sets the contribution amount, frequency, max members, and payout order method. Members join via invite token or direct request. The organizer approves or rejects each request.
+
+**2. Starting**
+Once members are ready, the organizer clicks "Start Circle". Contributions and a payout are automatically created for round 1. If the payout order is set to *lottery*, it's randomized at this point.
+
+**3. Active**
+Each round, all members contribute. The designated recipient receives the full pot. The organizer marks contributions as paid or late, then advances to the next round when ready.
+
+**4. Completed**
+After every member has received their payout, the circle is marked as completed.
+
+---
 
 ## Payout Order Methods
 
-- `lottery` – Random order assigned at start
-- `seniority` – Order by join date (earliest first)
-- `manual` – Organizer sets each member's payout order manually before starting
+| Method | How it works |
+|--------|--------------|
+| Manual | Organizer assigns a position number to each member before starting |
+| Lottery | Order is randomized when the circle starts |
+| Seniority | Members are ordered by who joined first |
+
+---
 
 ## Authentication
 
-All endpoints require JWT Bearer token. Get it via `/api/auth/login/` with `username` and `password`.
+Standard Django session authentication. Register at `/register/`, log in at `/login/`. No tokens or API keys needed — the browser handles the session automatically.
+
+---
+
+## Admin Panel
+
+Go to `/admin/` and log in with your superuser credentials. From there you can manage all circles, members, contributions, payouts, disputes, and trust ratings directly.
