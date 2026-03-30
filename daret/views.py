@@ -7,6 +7,7 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.utils import timezone
 from django import forms
+from django.db.models import Count, Q
 
 from .models import Circle, CircleMembership, Contribution, Payout, Dispute, TrustRating
 
@@ -64,9 +65,9 @@ def logout_view(request):
 def dashboard(request):
     circles = Circle.objects.filter(
         memberships__user=request.user, memberships__status='approved'
-    ).distinct()
-    for c in circles:
-        c.approved_member_count = c.memberships.filter(status='approved').count()
+    ).distinct().annotate(
+        approved_member_count=Count('memberships', filter=Q(memberships__status='approved'))
+    )
 
     active_count = circles.filter(status='active').count()
     my_memberships = CircleMembership.objects.filter(user=request.user, status='approved')
@@ -91,9 +92,9 @@ def dashboard(request):
 def circle_list(request):
     circles = Circle.objects.filter(
         memberships__user=request.user, memberships__status='approved'
-    ).distinct()
-    for c in circles:
-        c.approved_member_count = c.memberships.filter(status='approved').count()
+    ).distinct().annotate(
+        approved_member_count=Count('memberships', filter=Q(memberships__status='approved'))
+    )      
     return render(request, 'daret/circle_list.html', {'circles': circles})
 
 

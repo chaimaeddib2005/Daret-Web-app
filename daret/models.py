@@ -62,10 +62,6 @@ class Circle(models.Model):
     def get_frequency_display(self):
         return dict(FREQ_CHOICES).get(self.frequency, self.frequency)
 
-    @property
-    def approved_member_count(self):
-        return self.memberships.filter(status='approved').count()
-
     def save(self, *args, **kwargs):
         if not self.invite_token:
             import secrets
