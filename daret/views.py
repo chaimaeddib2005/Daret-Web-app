@@ -61,6 +61,7 @@ def logout_view(request):
     return redirect('login')
 
 
+
 @login_required
 def dashboard(request):
     circles = Circle.objects.filter(

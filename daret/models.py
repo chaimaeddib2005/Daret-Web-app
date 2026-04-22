@@ -99,6 +99,7 @@ class Contribution(models.Model):
     def __str__(self):
         return f"{self.membership.user.username} - Round {self.round_number} - {self.status}"
 
+
     def mark_paid(self):
         self.status = 'paid'
         self.paid_date = timezone.now()
