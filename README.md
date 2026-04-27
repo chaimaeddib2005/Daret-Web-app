@@ -66,3 +66,6 @@ Standard Django session authentication. Register at `/register/`, log in at `/lo
 ## Admin Panel
 
 Go to `/admin/` and log in with your superuser credentials. From there you can manage all circles, members, contributions, payouts, disputes, and trust ratings directly.
+## Live Demo
+
+[Access the deployed app here](https://daret-app.azurewebsites.net/)
