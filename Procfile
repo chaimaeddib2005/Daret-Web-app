@@ -1,0 +1,1 @@
+web: gunicorn daret_project.wsgi
